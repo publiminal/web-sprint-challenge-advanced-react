@@ -1,4 +1,5 @@
 import React from 'react'
+import axios from 'axios'
 
 // The coordinates of each square of the grid are as follows:
 // (1, 1) (2, 1) (3, 1)
@@ -47,7 +48,8 @@ export default class AppClass extends React.Component {
       ],
       totalMoves:0, 
       currentSquare:[[2,2,'B'],4],
-      message:''
+      message:'',
+      email:''
     } 
   
     this.state = {
@@ -58,7 +60,8 @@ export default class AppClass extends React.Component {
       ],
       totalMoves:0, 
       currentSquare:[[2,2,'B'],4],
-      message:''
+      message:'',
+      email:''
     }
 
   }
@@ -171,20 +174,57 @@ export default class AppClass extends React.Component {
         }else{
           this.skipSquare(msg, this.state.totalMoves)
         }
-        // this.state(msg, this.state.totalMoves)
   }
 
+   // class property to submit form
+   handleSubmit = e => {
+    e.preventDefault();
+    // console.log('formSubmit', e)
+
+     //The endpoint expects a payload like { "x": 1, "y": 2, "steps": 3, "email": "lady@gaga.com" } 
+     //http://localhost:9000/api/result
+
+    const [square, idx] = this.getCurrentSquare();
+    const payload = {
+      x:square[0],
+      y:square[1], 
+      steps:this.state.totalMoves, 
+      email:this.state.email
+    }
+    // curl -d "x=2&y=2&steps=3&email=foo@bar.baz" http://localhost:9000/api/result 
+    this.setState({message:''})
+    console.log('payload',{ ...payload})
+    axios.post('http://localhost:9000/api/result', payload)
+      .then(res => {
+         console.log('data ok !!!!!', res.data.message)
+         this.setState({message:res.data.message, email:''}) 
+      }).catch(err => {
+        debugger
+        console.log('data error !!!!!',err.response.data.message)
+        this.setState({message:err.response.data.message, email:''}) 
+      })
+      .finally(() => {
+        console.log(`end post call API`)
+      })
+  }
+
+  onChange = evt => {
+      // console.log('onChange', evt.target.value)
+      const name= evt.target.value
+      this.setState({email:name})
+  }
 
   render() {
     const { className } = this.props
     const [square, idx] = this.getCurrentSquare();
+    const times = this.state.totalMoves > 1 || this.state.totalMoves === 0  ? 'times' : 'time'
     // console.log('square', square)
     // const moveColumn = square[0]
     return (
       <div id="wrapper" className={className}>
         <div className="info">
           <h3 id="coordinates">Coordinates ({`${square[0]}, ${square[1]}`})</h3>
-          <h3 id="steps">You moved {this.state.totalMoves} times</h3>
+          <h3 id="steps">You moved {`${this.state.totalMoves} ${times}`}</h3>
         </div>
         <div id="grid">
 
@@ -204,8 +244,8 @@ export default class AppClass extends React.Component {
           <button onClick={() => this.squareHandler('reset')} id="reset">reset</button>
         </div>
         <form>
-          <input id="email" type="email" placeholder="type email"></input>
-          <input id="submit" type="submit"></input>
+          <input id="email" type="email" onChange={this.onChange} value={this.state.email} placeholder="type email"></input>
+          <input onClick={this.handleSubmit} id="submit" type="submit"></input>
         </form>
       </div>
     )
