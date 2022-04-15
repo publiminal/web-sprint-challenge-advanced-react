@@ -199,7 +199,7 @@ export default class AppClass extends React.Component {
          console.log('data ok !!!!!', res.data.message)
          this.setState({message:res.data.message, email:''}) 
       }).catch(err => {
-        debugger
+        // debugger
         console.log('data error !!!!!',err.response.data.message)
         this.setState({message:err.response.data.message, email:''}) 
       })
