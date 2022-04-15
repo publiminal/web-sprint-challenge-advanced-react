@@ -39,11 +39,16 @@ export default class AppClass extends React.Component {
   constructor(props){
     super(props)
 
-    this.initBoard = [
-      [1,1,''],[2,1,''],[3,1,''],
-      [1,2,''],[2,2,''],[3,2,''],
-      [1,3,''],[2,3,''],[3,3,'']
-    ]  
+    this.initState = {
+      board:[
+        [1,1,''],[2,1,''],[3,1,''],
+        [1,2,''],[2,2,'B'],[3,2,''],
+        [1,3,''],[2,3,''],[3,3,'']
+      ],
+      totalMoves:0, 
+      currentSquare:[[2,2,'B'],4],
+      message:''
+    } 
   
     this.state = {
       board:[
@@ -53,14 +58,21 @@ export default class AppClass extends React.Component {
       ],
       totalMoves:0, 
       currentSquare:[[2,2,'B'],4],
-      left:false, 
-      right:false, 
-      up:false,
-      down:false, 
       message:''
     }
 
   }
+
+   skipSquare = (msg, totalMoves) => {
+    const newBoard =  JSON.parse(JSON.stringify(this.state.board));
+    const newSquare = JSON.parse(JSON.stringify(this.state.currentSquare));
+    this.setState({
+      board:newBoard,
+      totalMoves:totalMoves, 
+      currentSquare:newSquare,
+      message:msg
+    })
+  } 
 
   /* return the current slice and its idx looking up for the letter B */
   getCurrentSquare = () => {
@@ -80,7 +92,7 @@ export default class AppClass extends React.Component {
   }
 
 
-  setCurrentSquare = (square) => {
+  setCurrentSquare = (square, msg, totalMoves) => {
       const newBoard =  JSON.parse(JSON.stringify(this.state.board));
       // console.log(newBoard)
       const [ newSquare, newIdx ] = square
@@ -90,24 +102,26 @@ export default class AppClass extends React.Component {
       newBoard[oldIdx][2] = '' // remove letter at old square
       // console.log(newBoard)
       this.setState({
+        board:newBoard,
+        totalMoves:totalMoves, 
         currentSquare:square,
-        board:newBoard 
+        message:msg
       })
   }
   
   // )
 
   squareHandler = (direction) => {
-    console.log('////////////////////////////////////////')
-    console.log('target',direction)
+    // console.log('////////////////////////////////////////')
+    // console.log('target',direction)
     const [ square, idx ] = this.getCurrentSquare()
-    console.log('square' , square)
+    // console.log('square' , square)
 
     const currentColumn = square[0]
-    console.log('currentColumn' , currentColumn)
+    // console.log('currentColumn' , currentColumn)
 
     const currentRow = square[1]
-    console.log('currentRow' , currentRow)
+    // console.log('currentRow' , currentRow)
 
     let newSquare = this.getCurrentSquare() // [[column,row, 'letter'],idx]
     let msg = ''
@@ -143,24 +157,28 @@ export default class AppClass extends React.Component {
           
         if(direction === 'reset'){
           isMovable = false
-          msg = ``
-          this.setState({totalMoves:0})         
-          newSquare = this.getSquareById([2,2, ''])
-          this.setCurrentSquare(newSquare)
+          // msg = ``
+          this.setState(this.initState) 
+          return        
+          // newSquare = this.getSquareById([2,2, ''])
+          // this.setCurrentSquare(newSquare)
         }   
         
         if(isMovable) {
-          this.setCurrentSquare(newSquare)
-          this.setState({totalMoves:this.state.totalMoves+1})
+          // this.setCurrentSquare(newSquare)
+          // this.setState({totalMoves:this.state.totalMoves+1})
+          this.setCurrentSquare(newSquare, msg, this.state.totalMoves+1)
+        }else{
+          this.skipSquare(msg, this.state.totalMoves)
         }
-        this.setState({message:msg})
+        // this.state(msg, this.state.totalMoves)
   }
 
 
   render() {
     const { className } = this.props
     const [square, idx] = this.getCurrentSquare();
-    console.log('square', square)
+    // console.log('square', square)
     // const moveColumn = square[0]
     return (
       <div id="wrapper" className={className}>
