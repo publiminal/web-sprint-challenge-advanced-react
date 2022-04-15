@@ -1,4 +1,5 @@
 import React,  {useState}  from 'react'
+import axios from 'axios'
 
 const Square = (props) =>{
   
@@ -25,7 +26,8 @@ export default function AppFunctional(props) {
     ],
     totalMoves:0, 
     currentSquare:[[2,2,'B'],4], 
-    message:''
+    message:'',
+    email:''
   } 
 
   const [state, setState] = useState({
@@ -36,7 +38,8 @@ export default function AppFunctional(props) {
       ],
       totalMoves:0, 
       currentSquare:[[2,2,'B'],4], 
-      message:''
+      message:'',
+      email:''
     } 
   )
 
@@ -73,18 +76,20 @@ export default function AppFunctional(props) {
         board:newBoard,
         totalMoves:totalMoves, 
         currentSquare:square,
-        message:msg
+        message:msg,
+        email:''
       })
   }
 
-  const skipSquare = (msg, totalMoves) => {
+  const skipSquare = ({msg, totalMoves, email}) => {
     const newBoard =  JSON.parse(JSON.stringify(state.board));
     const newSquare = JSON.parse(JSON.stringify(state.currentSquare));
     setState({
       board:newBoard,
-      totalMoves:totalMoves, 
+      totalMoves:totalMoves || state.totalMoves, 
       currentSquare:newSquare,
-      message:msg
+      message:msg || state.msg,
+      email:email || ''
     })
   }  
 
@@ -143,11 +148,60 @@ export default function AppFunctional(props) {
         if(isMovable) {
           setCurrentSquare(newSquare, msg, state.totalMoves+1)
         }else{
-          skipSquare(msg, state.totalMoves)
+          // skipSquare(msg, state.totalMoves)
+          skipSquare({msg:msg, totalMoves:state.totalMoves, email:state.email})
+
         }
   }
 
+
+  // class property to submit form
+  const handleSubmit = e => {
+    e.preventDefault();
+    // console.log('formSubmit', e)
+
+     //The endpoint expects a payload like { "x": 1, "y": 2, "steps": 3, "email": "lady@gaga.com" } 
+     //http://localhost:9000/api/result
+
+    const [square, idx] = getCurrentSquare();
+    const payload = {
+      x:square[0],
+      y:square[1], 
+      steps:state.totalMoves, 
+      email:state.email
+    }
+    // curl -d "x=2&y=2&steps=3&email=foo@bar.baz" http://localhost:9000/api/result 
+    // setState({message:''})
+    skipSquare({msg:'', totalMoves:state.totalMoves, email:state.email})
+    // console.log('payload',{ ...payload})
+    axios.post('http://localhost:9000/api/result', payload)
+      .then(res => {
+         console.log('data ok !!!!!', res.data.message)
+        //  setState({message:res.data.message, email:''}) 
+        skipSquare({msg:res.data.message, totalMoves:state.totalMoves, email:''})
+
+      }).catch(err => {
+        // debugger
+        console.log('data error !!!!!',err.response.data.message)
+        // setState({message:err.response.data.message, email:''}) 
+        skipSquare({msg:err.response.data.message, totalMoves:state.totalMoves, email:''})
+        
+      })
+      .finally(() => {
+        console.log(`end post call API`)
+      })
+  }
+
+  const onChange = evt => {
+      // console.log('onChange', evt.target.value)
+      const name= evt.target.value
+      // setState({email:name})
+      skipSquare({msg:null, totalMoves:null, email:name})
+  }
+
   const [square, idx] = getCurrentSquare();
+  const times = state.totalMoves > 1 || state.totalMoves === 0  ? 'times' : 'time'
+
   // ${square[0]}, ${square[1]}
   return (
 
@@ -156,7 +210,8 @@ export default function AppFunctional(props) {
     <div id="wrapper" className={props.className}>
         <div className="info">
           <h3 id="coordinates">Coordinates ({`${square[0]}, ${square[1]}`})</h3>
-          <h3 id="steps">You moved {state.totalMoves} times</h3>
+          <h3 id="steps">You moved {`${state.totalMoves} ${times}`}</h3>
+
         </div>
         <div id="grid">
 
@@ -176,8 +231,8 @@ export default function AppFunctional(props) {
           <button onClick={() => squareHandler('reset')} id="reset">reset</button>
         </div>
         <form>
-          <input id="email" type="email" placeholder="type email"></input>
-          <input id="submit" type="submit"></input>
+          <input id="email" onChange={onChange} value={state.email} type="email" placeholder="type email"></input>
+          <input onClick={handleSubmit} id="submit" type="submit"></input>
         </form>
     </div>
   )
